@@ -11,11 +11,11 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       unique: true,
     },
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    // user: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "User",
+    //   required: true,
+    // },
     // shop: {
     //   type: Schema.Types.ObjectId,
     //   ref: "Shop",

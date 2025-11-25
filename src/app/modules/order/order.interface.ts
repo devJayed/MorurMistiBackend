@@ -9,7 +9,7 @@ export interface IOrderProduct {
 }
 
 export interface IOrder extends Document {
-  user: Types.ObjectId;
+  // user: Types.ObjectId;
   orderId: string;
   // shop: Types.ObjectId;
   products: IOrderProduct[];
