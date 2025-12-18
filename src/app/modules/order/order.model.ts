@@ -11,11 +11,18 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       unique: true,
     },
-    // user: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "User",
-    //   required: true,
-    // },
+    name: {
+      type: String,
+      required: true,
+    },
+    mobile: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      default: "",
+    },
     // shop: {
     //   type: Schema.Types.ObjectId,
     //   ref: "Shop",
@@ -152,7 +159,7 @@ orderSchema.pre("validate", async function (next) {
   // }
 
   const isDhaka = order?.shippingAddress?.toLowerCase()?.includes("dhaka");
-  const deliveryCharge = isDhaka ? 60 : 120;
+  const deliveryCharge = isDhaka ? 70 : 130;
 
   order.totalAmount = totalAmount;
   order.discount = finalDiscount;
