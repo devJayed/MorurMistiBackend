@@ -1,32 +1,38 @@
+import { StatusCodes } from "http-status-codes";
 import mongoose, { Types } from "mongoose";
+import QueryBuilder from "../../builder/QueryBuilder";
+import AppError from "../../errors/appError";
 import { IJwtPayload } from "../auth/auth.interface";
 import { Coupon } from "../coupon/coupon.model";
+import { Payment } from "../payment/payment.model";
+import { Product } from "../product/product.model";
 import { IOrder } from "./order.interface";
 import { Order } from "./order.model";
-import { Product } from "../product/product.model";
-import { Payment } from "../payment/payment.model";
-import { generateTransactionId } from "../payment/payment.utils";
-import { sslService } from "../sslcommerz/sslcommerz.service";
-import { generateOrderInvoicePDF } from "../../utils/generateOrderInvoicePDF";
-import { EmailHelper } from "../../utils/emailHelper";
-import User from "../user/user.model";
-import AppError from "../../errors/appError";
-import { StatusCodes } from "http-status-codes";
-import QueryBuilder from "../../builder/QueryBuilder";
 
 const createOrder = async (
   orderData: Partial<IOrder>,
-  // authUser: IJwtPayload
+  // authUser: IJwtPayload ; for v1 is not used
 ) => {
-  console.log({ orderData }); 
+  // console.log({ orderData });
+  // ✅ Transform products safely
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    if (orderData.products) {
-      for (const productItem of orderData.products) {
-        const product = await Product.findById(productItem.product)
-        .session(session);
+    /** ✅ ALWAYS normalize products */
+    const products: any = orderData?.products?.map((item: any) => ({
+      product: new Types.ObjectId(item.product),
+      quantity: item.quantity,
+      color: item.color,
+    }));
+
+    if (products) {
+      /** 🔒 Stock validation */
+      for (const productItem of products) {
+        const product = await Product.findById(productItem.product).session(
+          session,
+        );
 
         if (product) {
           if (product.isActive === false) {
@@ -48,7 +54,7 @@ const createOrder = async (
     // Handle coupon and update orderData
     if (orderData.coupon) {
       const coupon = await Coupon.findOne({ code: orderData.coupon }).session(
-        session
+        session,
       );
       if (coupon) {
         const currentDate = new Date();
@@ -67,12 +73,22 @@ const createOrder = async (
         throw new Error("Invalid coupon code.");
       }
     }
+    /** ✅ SINGLE Order creation*/
+    const order = new Order({
+      name: orderData.name,
+      mobile: orderData.mobile,
+      shippingAddress: orderData.shippingAddress,
+      city: orderData.city,
+      paymentMethod: orderData.paymentMethod,
+      coupon: orderData.coupon ?? null,
+      products,
+    });
 
     // Create the order
-    const order = new Order({
-      ...orderData,
-      // user: authUser.userId,
-    });
+    // const order = new Order({
+    //   ...orderDataFinal,
+    //   // user: authUser.userId,
+    // });
 
     const createdOrder = await order.save({ session });
 
@@ -95,21 +111,25 @@ const createOrder = async (
 
 const getMyShopOrders = async (
   query: Record<string, unknown>,
-  authUser: IJwtPayload
+  authUser: IJwtPayload,
 ) => {
-  console.log({query, authUser});
+  // console.log("service query:", { query });
+  // console.log("service authUser:", { authUser });
 
   const orderQuery = new QueryBuilder(
-    Order.find().populate("user products.product"),
-    query
+    Order.find().populate("products.product"),
+    query,
   )
-    .search(["user.name", "user.email", "products.product.name"])
+    .search(["user.name", "products.product.name"])
     .filter()
     .sort()
     .paginate()
     .fields();
 
+  // const orderQuery = new QueryBuilder(Order.find(), query);
+
   const result = await orderQuery.modelQuery;
+  // console.log("service result", { result });
 
   const meta = await orderQuery.countTotal();
 
@@ -121,7 +141,7 @@ const getMyShopOrders = async (
 
 const getOrderDetails = async (orderId: string) => {
   const order = await Order.findById(orderId).populate(
-    "user products.product coupon"
+    "user products.product coupon",
   );
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, "Order not Found");
@@ -133,13 +153,13 @@ const getOrderDetails = async (orderId: string) => {
 
 const getMyOrders = async (
   query: Record<string, unknown>,
-  authUser: IJwtPayload
+  authUser: IJwtPayload,
 ) => {
   const orderQuery = new QueryBuilder(
     Order.find({ user: authUser.userId }).populate(
-      "user products.product coupon"
+      "user products.product coupon",
     ),
-    query
+    query,
   )
     .search(["user.name", "user.email", "products.product.name"])
     .filter()
@@ -160,26 +180,26 @@ const getMyOrders = async (
 const changeOrderStatus = async (
   orderId: string,
   status: string,
-  authUser: IJwtPayload
+  authUser: IJwtPayload,
 ) => {
   const order = await Order.findOneAndUpdate(
     { _id: new Types.ObjectId(orderId) },
     { status },
-    { new: true }
+    { new: true },
   );
-  console.log({order});
+  // console.log({ order });
   return order;
 };
 
 const changePaymentStatus = async (
   orderId: string,
   paymentStatus: string,
-  authUser: IJwtPayload
+  authUser: IJwtPayload,
 ) => {
   const updatedOrder = await Order.findOneAndUpdate(
     { _id: new Types.ObjectId(orderId) },
     { paymentStatus },
-    { new: true }
+    { new: true },
   );
 
   return updatedOrder;

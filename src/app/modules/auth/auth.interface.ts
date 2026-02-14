@@ -13,7 +13,7 @@ export interface IAuth {
   };
 }
 
-export interface IJwtPayload { 
+export interface IJwtPayload {
   userId: string;
   name: string;
   email: string;

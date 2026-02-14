@@ -21,7 +21,6 @@ const loginUser = async (payload: IAuth) => {
       const user = await User.findOne({ email: payload.email }).session(
          session
       );
-      console.log(user);
       if (!user) {
          throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found!');
       }
@@ -35,7 +34,7 @@ const loginUser = async (payload: IAuth) => {
       }
 
       const jwtPayload: IJwtPayload = {
-         userId: user._id.toString(),
+         userId: user._id as string,
          name: user.name as string,
          email: user.email as string,
          isActive: user.isActive,
@@ -99,7 +98,7 @@ const refreshToken = async (token: string) => {
 
 
    const jwtPayload: IJwtPayload = {
-      userId: isUserExist._id.toString(),
+      userId: isUserExist._id as string,
       name: isUserExist.name as string,
       email: isUserExist.email as string,
       isActive: isUserExist.isActive,

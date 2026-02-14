@@ -1,9 +1,6 @@
-import { Schema, Types, model } from "mongoose";
-import { ICounter, IOrder } from "./order.interface";
+import { Schema, model } from "mongoose";
 import { Product } from "../product/product.model";
-import { Coupon } from "../coupon/coupon.model";
-import AppError from "../../errors/appError";
-import { StatusCodes } from "http-status-codes";
+import { ICounter, IOrder } from "./order.interface";
 
 const orderSchema = new Schema<IOrder>(
   {
@@ -23,11 +20,6 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       default: "",
     },
-    // shop: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "Shop",
-    //   required: true,
-    // },
     products: [
       {
         product: {
@@ -40,10 +32,10 @@ const orderSchema = new Schema<IOrder>(
           required: true,
           min: 1,
         },
-        unitPrice: {
-          type: Number,
-          required: true,
-        },
+        // unitPrice: {
+        //   type: Number,
+        //   required: true,
+        // },
         color: {
           type: String,
           required: true,
@@ -76,8 +68,8 @@ const orderSchema = new Schema<IOrder>(
     },
     status: {
       type: String,
-      enum: ["Pending", "Processing", "Completed", "Cancelled"],
-      default: "Pending",
+      enum: ["Received", "In-Processing", "Completed", "Cancelled"],
+      default: "Received",
     },
     shippingAddress: {
       type: String,
@@ -90,13 +82,13 @@ const orderSchema = new Schema<IOrder>(
     },
     paymentStatus: {
       type: String,
-      enum: ["Pending", "Paid", "Failed"],
+      enum: ["Pending", "On-the-Way", "Paid", "Cancelled"],
       default: "Pending",
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const counterSchema = new Schema<ICounter>({
@@ -131,7 +123,7 @@ orderSchema.pre("validate", async function (next) {
     let productPrice = product.price;
     if (offerPrice) productPrice = Number(offerPrice);
 
-    item.unitPrice = productPrice;
+    // item.unitPrice = productPrice;
     const price = productPrice * item.quantity;
     // console.log(price);
     totalAmount += price;
@@ -177,7 +169,7 @@ orderSchema.pre<IOrder>("save", async function (next) {
     const counter = await Counter.findOneAndUpdate(
       { id: "orderId" },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
     const nextSeq = counter.seq;

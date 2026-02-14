@@ -1,17 +1,17 @@
-import { Types, Document } from "mongoose";
+import { Document, Types } from "mongoose";
 import { IPayment } from "../payment/payment.interface";
 
 export interface IOrderProduct {
   product: Types.ObjectId;
   quantity: number;
-  unitPrice: number;
+  // unitPrice: number;
   color: string;
 }
 
 export interface IOrder extends Document {
   name: string;
   mobile: string;
-  email: string;
+  email?: string;
   orderId: string;
   // shop: Types.ObjectId;
   products: IOrderProduct[];
@@ -20,10 +20,11 @@ export interface IOrder extends Document {
   discount: number;
   deliveryCharge: number;
   finalAmount: number;
-  status: "Pending" | "Processing" | "Completed" | "Cancelled";
+  status: "Received" | "In-Processing" | "Completed" | "Cancelled";
+  city: string;
   shippingAddress: string;
   paymentMethod: "COD" | "Card" | "Online";
-  paymentStatus: "Pending" | "Processing" | "Paid" | "Cancelled" | "Failed";
+  paymentStatus: "Pending" | "On-the-Way" | "Paid" | "Cancelled";
   createdAt?: Date;
   updatedAt?: Date;
   payment?: IPayment | null;
