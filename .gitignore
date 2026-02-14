@@ -12,8 +12,7 @@ pids
 *.pid.lock
 
 # Environment Variables
-# .env
-.env.example
+.env
 
 # Node modules
 node_modules/
